@@ -524,7 +524,7 @@ export default function InProgress() {
                     <img src={`/storage/images/${gameTime === 'Night' ? 'night' : 'sun'}.png`} alt={gameTime === 'Night' ? 'Night Time Image' : 'Daytime Image'} style={{width: '2rem'}} className="inline-block mr-2 align-bottom"/>
                     <span className="text-2xl font-extrabold">{gameTime === 'Night' ? 'Night Time' : 'Daytime'}</span>
                 </div>
-                <div className="mt-8 font-extrabold text-xl">Round: {roundNumber}</div>
+                <div className="mt-8 font-extrabold text-xl">Round: {roundNumber} | Your Role: {role.charAt(0).toUpperCase() + role.slice(1)}</div>
                 {gameTime === 'Day' ? (
                     <Alert severity={gameMeta.nightResult.status === 'Saved' ? 'success' : 'error'} className="my-4">
                         {gameMeta.nightResult.status === 'Saved' ? "No one was killed!" : `${gameMeta.nightResult.name} was killed brutally.`}
