@@ -281,6 +281,9 @@ class MafiaSessionController extends Controller
             $sessionId = MafiaSession::getMafiaSessionIdFromSlug($slug);
             $lastRound = GameRound::getCurrentRoundDetailsForSession($sessionId);
             $votesData = GeneralVote::getKillVotesForUsers($lastRound['id']);
+            if (empty($votesData)) {
+                return [false, -1];
+            }
             $record = new RoundDetailsCommon();
             $record->round_id = $lastRound['id'];
             $record->killed_user = $votesData[0]['kill_vote_to'];
@@ -298,6 +301,9 @@ class MafiaSessionController extends Controller
         if ($result) {
             $userName = User::getUserDetails($killedId)['name'];
             return Redirect::back()->with('success', "Night has arrived and $userName is no more!");
+        }
+        if ($killedId === -1) {
+            return Redirect::back()->with('error', "No one has cast a vote!");
         }
         return Redirect::back()->with('error', "Some error occurred!");
     }
