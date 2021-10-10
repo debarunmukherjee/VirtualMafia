@@ -10,15 +10,25 @@ import InProgress from "@/Pages/GameScreens/InProgress";
 import GameEnded from "@/Pages/GameScreens/GameEnded";
 
 export default function GameLobby(props) {
-    const {sessionDetails} = usePage().props;
+    const {sessionDetails, isUserDead} = usePage().props;
     const getGameScreen = () => {
         if (!Number(sessionDetails.is_started)) {
             return <PreStart/>
         }
+        if (Number(sessionDetails.is_ended)) {
+            return <GameEnded/>
+        }
+        if (isUserDead) {
+            return (
+                <div className="text-center p-6">
+                    <img src="/storage/images/zombie.png" alt="Sleeping Image" className="inline-block mr-2 align-bottom w-1/2"/>
+                    <p className="text-center mt-6 text-2xl">You cannot participate in this session anymore, as you were killed!</p>
+                </div>
+            );
+        }
         if (Number(sessionDetails.is_started) && !Number(sessionDetails.is_ended)) {
             return <InProgress/>
         }
-        return <GameEnded/>
     }
     return (
         <Authenticated

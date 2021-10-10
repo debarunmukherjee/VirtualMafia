@@ -79,63 +79,72 @@ class MafiaSessionController extends Controller
                 'isGod' => MafiaSessionMember::memberHasRole(Auth::id(), $sessionId, 'god')
             ];
         } elseif (!$sessionDetails['is_ended']) {
-            $currentRound = GameRound::getCurrentRoundDetailsForSession($sessionId);
-            if ($currentRound['time'] === 'Night') {
-                $gameMeta = [];
-                if (MafiaSessionMember::memberHasRole(Auth::id(), $sessionId, 'god')) {
-                    $gameMeta['villagerAliveCount'] = MafiaSessionMember::getCountOfAliveVillagers($sessionId);
-                    $gameMeta['mafiaAliveCount'] = MafiaSessionMember::getCountOfAliveMafias($sessionId);
-                    $gameMeta['doctorsAliveCount'] = MafiaSessionMember::getCountOfAliveDoctors($sessionId);
-                    $gameMeta['sheriffsAliveCount'] = MafiaSessionMember::getCountOfAliveSheriffs($sessionId);
-                    $gameMeta['progress'] = GameRound::getProgressOfGodForCurrentNightRound($sessionId);
-                    $gameMeta['pendingDoctors'] = MafiaSessionMember::getPendingDoctorsDataForCurrentRound($sessionId);
-                    $gameMeta['pendingSheriffs'] = MafiaSessionMember::getPendingSheriffsDataForCurrentRound($sessionId);
-                } elseif (MafiaSessionMember::memberHasRole(Auth::id(), $sessionId, 'mafia')) {
-                    $gameMeta['mafiaAliveCount'] = MafiaSessionMember::getCountOfAliveMafias($sessionId);
-                    $gameMeta['totalAliveCount'] = MafiaSessionMember::getCountOfAlivePeople($sessionId);
-                } else {
-                    $gameMeta['totalAliveCount'] = MafiaSessionMember::getCountOfAlivePeople($sessionId);
-                }
-                $gameMeta['aliveUserData'] = MafiaSessionMember::getAlivePeopleData($sessionId);
+            $deadUserIds = MafiaSessionMember::getDeadUserIdsForSession($sessionId);
+            if (in_array(Auth::id(), $deadUserIds)) {
                 $data = [
                     'slug' => $slug,
-                    'roundNumber' => $currentRound['number'],
                     'sessionDetails' => $sessionDetails,
-                    'gameTime' => $currentRound['time'],
-                    'role' => MafiaSessionMember::getRoleFromRoleId(MafiaSessionMember::getRoleIdOfMember($sessionId, Auth::id())),
-                    'gameMeta' => $gameMeta
+                    'isUserDead' => true
                 ];
             } else {
-                $lastRoundId = GameRound::where('session_id', $sessionId)->orderBy('id', 'DESC')->get()->toArray()[1]['id'];
-                $userIdKilledByMafia = RoundDetailsMafia::where('round_id', $lastRoundId)->first()->killed_user;
-                $userIdsSavedByDoctors = array_column(RoundDetailsDoctor::where('round_id', $lastRoundId)->get(['saved_user'])->toArray(), 'saved_user');
-                $gameMeta = [];
-                if (in_array($userIdKilledByMafia, $userIdsSavedByDoctors)) {
-                    $gameMeta['nightResult'] = ['status' => 'Saved'];
+                $currentRound = GameRound::getCurrentRoundDetailsForSession($sessionId);
+                if ($currentRound['time'] === 'Night') {
+                    $gameMeta = [];
+                    if (MafiaSessionMember::memberHasRole(Auth::id(), $sessionId, 'god')) {
+                        $gameMeta['villagerAliveCount'] = MafiaSessionMember::getCountOfAliveVillagers($sessionId);
+                        $gameMeta['mafiaAliveCount'] = MafiaSessionMember::getCountOfAliveMafias($sessionId);
+                        $gameMeta['doctorsAliveCount'] = MafiaSessionMember::getCountOfAliveDoctors($sessionId);
+                        $gameMeta['sheriffsAliveCount'] = MafiaSessionMember::getCountOfAliveSheriffs($sessionId);
+                        $gameMeta['progress'] = GameRound::getProgressOfGodForCurrentNightRound($sessionId);
+                        $gameMeta['pendingDoctors'] = MafiaSessionMember::getPendingDoctorsDataForCurrentRound($sessionId);
+                        $gameMeta['pendingSheriffs'] = MafiaSessionMember::getPendingSheriffsDataForCurrentRound($sessionId);
+                    } elseif (MafiaSessionMember::memberHasRole(Auth::id(), $sessionId, 'mafia')) {
+                        $gameMeta['mafiaAliveCount'] = MafiaSessionMember::getCountOfAliveMafias($sessionId);
+                        $gameMeta['totalAliveCount'] = MafiaSessionMember::getCountOfAlivePeople($sessionId);
+                    } else {
+                        $gameMeta['totalAliveCount'] = MafiaSessionMember::getCountOfAlivePeople($sessionId);
+                    }
+                    $gameMeta['aliveUserData'] = MafiaSessionMember::getAlivePeopleData($sessionId);
+                    $data = [
+                        'slug' => $slug,
+                        'roundNumber' => $currentRound['number'],
+                        'sessionDetails' => $sessionDetails,
+                        'gameTime' => $currentRound['time'],
+                        'role' => MafiaSessionMember::getRoleFromRoleId(MafiaSessionMember::getRoleIdOfMember($sessionId, Auth::id())),
+                        'gameMeta' => $gameMeta
+                    ];
                 } else {
-                    $gameMeta['nightResult'] = ['status' => 'Killed', 'name' => User::getUserDetails($userIdKilledByMafia)['name']];
+                    $lastRoundId = GameRound::where('session_id', $sessionId)->orderBy('id', 'DESC')->get()->toArray()[1]['id'];
+                    $userIdKilledByMafia = RoundDetailsMafia::where('round_id', $lastRoundId)->first()->killed_user;
+                    $userIdsSavedByDoctors = array_column(RoundDetailsDoctor::where('round_id', $lastRoundId)->get(['saved_user'])->toArray(), 'saved_user');
+                    $gameMeta = [];
+                    if (in_array($userIdKilledByMafia, $userIdsSavedByDoctors)) {
+                        $gameMeta['nightResult'] = ['status' => 'Saved'];
+                    } else {
+                        $gameMeta['nightResult'] = ['status' => 'Killed', 'name' => User::getUserDetails($userIdKilledByMafia)['name']];
+                    }
+                    if (MafiaSessionMember::memberHasRole(Auth::id(), $sessionId, 'god')) {
+                        $gameMeta['villagerAliveCount'] = MafiaSessionMember::getCountOfAliveVillagers($sessionId);
+                        $gameMeta['mafiaAliveCount'] = MafiaSessionMember::getCountOfAliveMafias($sessionId);
+                        $gameMeta['doctorsAliveCount'] = MafiaSessionMember::getCountOfAliveDoctors($sessionId);
+                        $gameMeta['sheriffsAliveCount'] = MafiaSessionMember::getCountOfAliveSheriffs($sessionId);
+                    } elseif (MafiaSessionMember::memberHasRole(Auth::id(), $sessionId, 'mafia')) {
+                        $gameMeta['mafiaAliveCount'] = MafiaSessionMember::getCountOfAliveMafias($sessionId);
+                        $gameMeta['totalAliveCount'] = MafiaSessionMember::getCountOfAlivePeople($sessionId);
+                    } else {
+                        $gameMeta['totalAliveCount'] = MafiaSessionMember::getCountOfAlivePeople($sessionId);
+                    }
+                    $gameMeta['aliveUserData'] = MafiaSessionMember::getAlivePeopleData($sessionId);
+                    $gameMeta['killVoteData'] = MafiaSessionMember::getKillVoteData($sessionId);
+                    $data = [
+                        'slug' => $slug,
+                        'roundNumber' => $currentRound['number'],
+                        'sessionDetails' => $sessionDetails,
+                        'gameTime' => $currentRound['time'],
+                        'role' => MafiaSessionMember::getRoleFromRoleId(MafiaSessionMember::getRoleIdOfMember($sessionId, Auth::id())),
+                        'gameMeta' => $gameMeta
+                    ];
                 }
-                if (MafiaSessionMember::memberHasRole(Auth::id(), $sessionId, 'god')) {
-                    $gameMeta['villagerAliveCount'] = MafiaSessionMember::getCountOfAliveVillagers($sessionId);
-                    $gameMeta['mafiaAliveCount'] = MafiaSessionMember::getCountOfAliveMafias($sessionId);
-                    $gameMeta['doctorsAliveCount'] = MafiaSessionMember::getCountOfAliveDoctors($sessionId);
-                    $gameMeta['sheriffsAliveCount'] = MafiaSessionMember::getCountOfAliveSheriffs($sessionId);
-                } elseif (MafiaSessionMember::memberHasRole(Auth::id(), $sessionId, 'mafia')) {
-                    $gameMeta['mafiaAliveCount'] = MafiaSessionMember::getCountOfAliveMafias($sessionId);
-                    $gameMeta['totalAliveCount'] = MafiaSessionMember::getCountOfAlivePeople($sessionId);
-                } else {
-                    $gameMeta['totalAliveCount'] = MafiaSessionMember::getCountOfAlivePeople($sessionId);
-                }
-                $gameMeta['aliveUserData'] = MafiaSessionMember::getAlivePeopleData($sessionId);
-                $gameMeta['killVoteData'] = MafiaSessionMember::getKillVoteData($sessionId);
-                $data = [
-                    'slug' => $slug,
-                    'roundNumber' => $currentRound['number'],
-                    'sessionDetails' => $sessionDetails,
-                    'gameTime' => $currentRound['time'],
-                    'role' => MafiaSessionMember::getRoleFromRoleId(MafiaSessionMember::getRoleIdOfMember($sessionId, Auth::id())),
-                    'gameMeta' => $gameMeta
-                ];
             }
         } else {
             $gameEnded = MafiaSession::checkIfGameEnded($sessionId);

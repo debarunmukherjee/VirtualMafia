@@ -152,6 +152,25 @@ export default function InProgress() {
         );
     }
 
+    const getInProgressContentForVillager = () => {
+        return (
+            <div className="mt-8">
+                <div className="grid grid-cols-1 md:grid-cols-2">
+                    <div className="w-full p-3 text-center">
+                        <img src="/storage/images/sleep.png" alt="Sleeping Image" className="inline-block mr-2 align-bottom w-1/2"/>
+                        <p className="mt-6">Go to sleep and meet your fate in the morning.</p>
+                    </div>
+                    <div className="w-full p-3 md:mt-0">
+                        <div className="rounded p-3 border">
+                            <p className="text-xl font-extrabold border-b text-center">Activity Logs</p>
+                            <p className="mt-4">Coming Soon...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     const getGodProgressInNight = () => {
         return (
             <div className="grid grid-cols-1 md:grid-cols-3">
@@ -466,6 +485,8 @@ export default function InProgress() {
                     return getInProgressContentForSheriff();
                 case 'god':
                     return getInProgressContentForGod();
+                case 'villager':
+                    return getInProgressContentForVillager();
             }
         } else {
             switch (role) {
